@@ -9,7 +9,9 @@ class TopBar(QWidget):
     """设置、标题、关闭和锁定控制。"""
 
     settings_clicked = Signal()
+    minimize_clicked = Signal()
     close_clicked = Signal()
+    collapse_toggled = Signal(bool)
     lock_toggled = Signal(bool)
 
     def __init__(self, parent: QWidget | None = None) -> None:
@@ -19,14 +21,25 @@ class TopBar(QWidget):
         self.setFixedHeight(46)
         self._drag_pos = None
         self._drag_window = None
+        self.setProperty("collapsed", "false")
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(12, 6, 12, 6)
         layout.setSpacing(10)
 
+        self.btn_collapse = QPushButton("⌄", self)
+        self.btn_collapse.setObjectName("IconBtn")
+        self.btn_collapse.setCheckable(True)
+        self.btn_collapse.setProperty("collapsed", "false")
+        self.btn_collapse.setToolTip("收起 / 展开界面")
+
         self.btn_settings = QPushButton("⚙", self)
         self.btn_settings.setObjectName("IconBtn")
         self.btn_settings.setToolTip("翻译设置")
+
+        self.btn_minimize = QPushButton("−", self)
+        self.btn_minimize.setObjectName("IconBtn")
+        self.btn_minimize.setToolTip("最小化")
 
         self.btn_close = QPushButton("✕", self)
         self.btn_close.setObjectName("IconBtn")
@@ -39,14 +52,32 @@ class TopBar(QWidget):
         self.btn_lock.setCheckable(True)
         self.btn_lock.setToolTip("锁定 / 解锁")
 
+        layout.addWidget(self.btn_collapse)
         layout.addStretch(1)
         layout.addWidget(self.btn_settings)
+        layout.addWidget(self.btn_minimize)
         layout.addWidget(self.btn_close)
         layout.addWidget(self.btn_lock)
 
+        self.btn_collapse.toggled.connect(self._on_collapse_toggled)
         self.btn_settings.clicked.connect(self.settings_clicked.emit)
+        self.btn_minimize.clicked.connect(self.minimize_clicked.emit)
         self.btn_close.clicked.connect(self.close_clicked.emit)
         self.btn_lock.toggled.connect(self._on_lock_toggled)
+
+    def _on_collapse_toggled(self, checked: bool) -> None:
+        self.btn_collapse.setProperty("collapsed", "true" if checked else "false")
+        self.btn_collapse.setText("⌃" if checked else "⌄")
+        self.btn_collapse.style().unpolish(self.btn_collapse)
+        self.btn_collapse.style().polish(self.btn_collapse)
+        self.collapse_toggled.emit(checked)
+
+    def set_collapsed(self, collapsed: bool) -> None:
+        if self.btn_collapse.isChecked() != collapsed:
+            self.btn_collapse.setChecked(collapsed)
+        self.setProperty("collapsed", "true" if collapsed else "false")
+        self.style().unpolish(self)
+        self.style().polish(self)
 
     def _on_lock_toggled(self, checked: bool) -> None:
         self.btn_lock.setProperty("locked", "true" if checked else "false")

@@ -45,13 +45,16 @@ class FloatWindow(QWidget):
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint
             | Qt.WindowType.WindowStaysOnTopHint
-            | Qt.WindowType.Tool
+            | Qt.WindowType.Window
         )
         self.resize(900, 540)
         self.setMinimumSize(300, 360)
 
         self._locked = False
+        self._collapsed = False
+        self._expanded_geometry = QRect()
         self._root_layout = None
+        self._content = None
         self._lock_overlay = None
         self._translation_thread: QThread | None = None
         self._translation_worker: _TranslationWorker | None = None
@@ -67,7 +70,9 @@ class FloatWindow(QWidget):
         self._build_ui()
         self._install_resize_filters()
         self.top_bar.settings_clicked.connect(self._open_settings)
+        self.top_bar.minimize_clicked.connect(self.showMinimized)
         self.top_bar.close_clicked.connect(self.close)
+        self.top_bar.collapse_toggled.connect(self._on_collapse_toggled)
         self.top_bar.lock_toggled.connect(self._on_lock_toggled)
         self.editor.translate_requested.connect(self._translate)
 
@@ -85,6 +90,7 @@ class FloatWindow(QWidget):
         root.addWidget(self.top_bar)
 
         content = QWidget(self)
+        self._content = content
         content.setObjectName("ContentArea")
         content_layout = QVBoxLayout(content)
         content_layout.setContentsMargins(0, 0, 0, 0)
@@ -98,6 +104,27 @@ class FloatWindow(QWidget):
         content_layout.addWidget(self.editor)
         root.addWidget(content, 1)
         outer.addLayout(root)
+
+    @Slot(bool)
+    def _on_collapse_toggled(self, collapsed: bool) -> None:
+        if collapsed == self._collapsed:
+            return
+
+        if collapsed:
+            self._expanded_geometry = self.geometry()
+            self._collapsed = True
+            if self._content is not None:
+                self._content.hide()
+            self.setMinimumSize(300, self.top_bar.height())
+            self.resize(self.width(), self.top_bar.height())
+        else:
+            self._collapsed = False
+            if self._content is not None:
+                self._content.show()
+            self.setMinimumSize(300, 360)
+            expanded_height = self._expanded_geometry.height() or 540
+            self.resize(self.width(), max(expanded_height, self.minimumHeight()))
+        self.top_bar.set_collapsed(collapsed)
 
     def _load_settings(self) -> TranslationSettings:
         defaults = TranslationSettings()

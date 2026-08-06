@@ -19,6 +19,10 @@ GLOBAL_QSS = """
     border-top-left-radius: 14px;
     border-top-right-radius: 14px;
 }
+#TopBar[collapsed="true"] {
+    border-bottom-left-radius: 14px;
+    border-bottom-right-radius: 14px;
+}
 
 QPushButton#IconBtn {
     min-width: 30px;
