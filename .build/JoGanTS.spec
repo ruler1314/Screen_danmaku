@@ -5,7 +5,7 @@ a = Analysis(
     ['..\\main.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[('D:/tool/RunVSCode/Python/Screen_danmaku/msg/bird.jpg', 'msg')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -35,4 +35,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=['D:\\tool\\RunVSCode\\Python\\Screen_danmaku\\msg\\bird.ico'],
 )
